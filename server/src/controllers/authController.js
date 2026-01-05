@@ -1,6 +1,10 @@
 const bcrypt = require("bcryptjs");
 const generateToken = require("../utils/generateToken");
 const User = require("../models/User");
+const {
+  sendWelcomeEmail,
+  notifyAdminNewUser,
+} = require("../services/emailServices");
 
 exports.register = async (req, res) => {
   try {
@@ -18,11 +22,18 @@ exports.register = async (req, res) => {
       password: hashedPassword,
       phone: phone || "",
     });
+    sendWelcomeEmail(user.name, user.email).catch((err) => {
+      console.log("failed to send welcome email:", err);
+    });
+    notifyAdminNewUser(user.name, user.email).catch((err) => {
+      console.log("failed to notify admin about new user:", err);
+    });
     res.status(201).json({
       _id: user._id,
       name: user.name,
       email: user.email,
       role: user.role,
+      profile: user.profile || {},
       token: generateToken(user._id),
     });
   } catch (error) {
@@ -30,7 +41,7 @@ exports.register = async (req, res) => {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
-//login
+
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -47,6 +58,7 @@ exports.login = async (req, res) => {
       name: user.name,
       email: user.email,
       role: user.role,
+      profile: user.profile || {},
       token: generateToken(user._id),
     });
   } catch (error) {
@@ -57,13 +69,15 @@ exports.login = async (req, res) => {
 
 exports.getCurrentUser = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id);
+    console.log("Current user /api/me", req.user);
+    const user = await User.findById(req.user._id).select("-password");
     res.json({
       _id: user._id,
       name: user.name,
       email: user.email,
       role: user.role,
       phone: user.phone,
+      profile: user.profile || {},
     });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });

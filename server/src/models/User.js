@@ -34,8 +34,50 @@ const userSchmema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    profile: {
+      avatar: {
+        type: String,
+        default: "",
+      },
+      phone: {
+        type: String,
+        default: "",
+      },
+      address: {
+        street: String,
+        city: String,
+        state: String,
+        zipCode: String,
+        country: String,
+      },
+      bio: {
+        type: String,
+        maxlength: 500,
+        default: "",
+      },
+      preferences: {
+        notifications: {
+          email: { type: Boolean, default: true },
+          sms: { type: Boolean, default: false },
+        },
+        newsletter: { type: Boolean, default: true },
+      },
+    },
+
+    createdAt: {
+      type: Date,
+      default: Date.now,
+    },
+    updatedAt: {
+      type: Date,
+      default: Date.now,
+    },
   },
   { timestamps: true }
 );
+userSchmema.pre("save", function (next) {
+  this.updatedAt = Date.now();
+  next();
+});
 const User = mongoose.model("User", userSchmema);
 module.exports = User;
